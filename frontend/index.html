@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Reverse Proxy Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .form-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>Enter a URL</h2>
+    <form id="urlForm">
+        <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://google.com)" required>
+        <button type="submit">Submit</button>
+        <div id="errorMessage" class="error-message"></div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('urlForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const urlInput = document.getElementById('urlInput').value;
+        const errorMessage = document.getElementById('errorMessage');
+
+        const isValidUrl = (url) => {
+            const regex = /^(https?:\/\/)?([a-z0-9.-]+)\.[a-z]{2,6}(\/[a-z0-9.-]*)*\/?$/i;
+            return regex.test(url);
+        };
+
+        let formattedUrl = urlInput.trim();
+
+        if (!formattedUrl.startsWith('http')) {
+            formattedUrl = 'https://' + formattedUrl;
+        }
+
+        if (isValidUrl(formattedUrl)) {
+            errorMessage.textContent = '';
+            
+            // Send the URL to the server
+            fetch('/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: formattedUrl })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = formattedUrl; // Redirect the user to the proxied URL
+                } else {
+                    errorMessage.textContent = 'Failed to submit the URL.';
+                }
+            })
+            .catch(error => {
+                errorMessage.textContent = 'An error occurred: ' + error.message;
+            });
+        } else {
+            errorMessage.textContent = 'Please enter a valid URL.';
+        }
+    });
+</script>
+
+</body>
+</html>
