@@ -28,7 +28,12 @@ int main() {
 
     printf("[microhttpdaemon] Listening on %d\n", PORT);
 
-    fetch_website("http://localhost/?get=google.com");
+    char * content = fetch_website("http://localhost/?get=icanhazip.com");
+    if(!content) {
+        fprintf(stderr, "fetch_website failed\n");
+    }
+
+    printf("%s\n", content);
 
     getchar();
     
