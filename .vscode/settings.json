@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "microhttpd.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "http_server.h": "c",
+        "curl.h": "c",
+        "stdlib.h": "c",
+        "http_parse.h": "c"
     }
 }

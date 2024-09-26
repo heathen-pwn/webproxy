@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include "http/http_server.h"
+#include "include/curl.h"
+#include "http/http_fetch.h"
 
 
 int main() {
     // Loading configurations
     #define PORT 80
-
+    curl_global_init(CURL_GLOBAL_DEFAULT); // Initilaizing curl.. called once per program lifetime
+    curl_easy_init();
+    curl_multi_init();
 
     // Entry of application
     // ?
@@ -23,7 +27,12 @@ int main() {
     }
 
     printf("[microhttpdaemon] Listening on %d\n", PORT);
+
+    fetch_website("http://localhost/?get=google.com");
+
     getchar();
     
     // etc...
+
+    curl_global_cleanup();
 }

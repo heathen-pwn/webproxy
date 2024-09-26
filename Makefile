@@ -1,8 +1,12 @@
 CC=gcc
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -fdiagnostics-color=always -I./backend/include
 TARGET=webproxy
-SRC=backend/main.c backend/http/http_server.c
-LIBS= -lmicrohttpd #-lanotherlib
+SRC= \
+	backend/main.c \
+	backend/http/http_server.c \
+	backend/http/http_fetch.c \
+	backend/http/http_parse.c
+LIBS= -lmicrohttpd -lcurl -luriparser
 all: $(TARGET)
 
 $(TARGET): 
