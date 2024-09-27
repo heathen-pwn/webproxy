@@ -5,26 +5,33 @@
 #include "http_server.h"
 #include "http_fetch.h"
 
-
 // HTTP Response
 enum MHD_Result  handle_request(void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls) {
-    // MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
-    
-    // The response is obviously not hello world, but should fetch the website that the user requested... so now I need a function that fetches a website and then sends it back to the user
     
     // Fetch
-    fetch_website(url);
-
-    // (testing)
-    const char *buffer = "Hello world!";
-    size_t response_size = strlen(buffer);
-    char *response_buffer = malloc(response_size + 1);
-    strcpy(response_buffer, buffer);
-    // ------
-
+    // Getting the value of the string query parameter, q stands for the website URL to query through the proxy
+    const char *query = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "q");
+    if (!query) {
+        fprintf(stderr, "No URL to proxy; query has failed\n");
+        return MHD_NO;
+    }
+    Memory *buffer = fetch_website(query);
+    if(!buffer) {
+        fprintf(stderr, "Failed to fetch website: %s\n", query);
+        return MHD_NO;
+    }
     //Responding
-    struct MHD_Response *response = MHD_create_response_from_buffer(response_size, response_buffer, MHD_RESPMEM_MUST_FREE);
+    struct MHD_Response *response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
+    if(!response) {
+        fprintf(stderr, "MHD_create_response_from_buffer failed");
+        free(buffer);
+        return MHD_NO;
+    }
     int res = MHD_queue_response(connection, MHD_HTTP_OK, response);
+    if(res != MHD_YES) {
+        fprintf(stderr, "MHD_queue response failed!");
+    }
+    free(buffer);
     return res;
 }
 

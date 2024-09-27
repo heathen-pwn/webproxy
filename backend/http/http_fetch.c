@@ -1,76 +1,73 @@
 #include <stdlib.h>
 #include "microhttpd.h"
-#include "curl.h"
+#include "http_fetch.h"
 #include "http_parse.h"
+#include "curl.h"
 
-
-size_t write_webdata(char *response_content, size_t size /*size per chunk*/, size_t nmemb /*number of chunks*/, char **webdata) {
-    size_t total_size = size * nmemb;
-    if(!webdata || !response_content || total_size == 0) {
-        fprintf(stderr, "No place to dump the content at or empty response");
+size_t write_webdata(char *response_content, size_t size /*size per chunk*/, size_t nmemb /*number of chunks in current transfer*/, void *webdata) {
+    if(!webdata) {
+        fprintf(stderr, "Webdata points to nothing");
         return 0;
     }
-    // Resize the memory to the appropriate size received from the website
-    size_t curchunk_length = *webdata ? strlen(*webdata) : 0;
-    char* resized_data = realloc(*webdata, curchunk_length + total_size + 1); 
-
-    if(!resized_data) {
+    size_t current_chunk_size = size * nmemb;
+    Memory *mem = (Memory *)webdata; 
+    if(!mem) {
+        fprintf(stderr, "No place to dump the content at");
+        return 0;
+    }
+    if(!response_content || current_chunk_size == 0) {
+        fprintf(stderr, "Empty response");
+        return 0;
+    }
+    //Adjusting size
+    printf("Current size: %zu, Requested new size: %zu\n", mem->size, mem->size + current_chunk_size + 1);
+    char *ptr = realloc(mem->response, mem->size + current_chunk_size + 1);
+    if(!ptr) {
         fprintf(stderr, "Could not assign memory block");
         return 0;
     }
-
-    // memcpy(resized_data, response_content, total_size); 
-    
-    // Fill in the block
-    memcpy(*webdata + curchunk_length, response_content, total_size);
-    *webdata = resized_data;
-    printf("The retrieved data in this chunk is: %s\n", response_content);
-    // Return size
-    return total_size;
+    printf("Current size: %zu, Requested new size: %zu\n", mem->size, mem->size + current_chunk_size + 1);
+    //Assigning to new memory block (the new size)
+    mem->response = ptr;
+    memcpy(&(mem->response[mem->size]), response_content, current_chunk_size);
+    mem->size += current_chunk_size;
+    mem->response[mem->size] = 0;
+    return current_chunk_size;
 
 }
-char * fetch_website(const char *url) {
-    // Extracting URL
-    UriQueryListA *list = parse_query(url);
-    if(!list) {
-        printf("Provided url could not be parsed into a list @fetch_website\n");
-        return NULL;
-    }
-    const char *website = get_key_value(list, "get");
-    if(!website) {
-        fprintf(stderr, "Key could not be retrieved");
-        return NULL;
-    }
+
+Memory * fetch_website(const char *url) {
+    printf("[fetch_website]: %s\n", url);
 
     // Processing the GET command asynchronously:
-    printf("Getting from the URL: %s\n", website);
-    char *webdata = malloc(1);
-    if(!webdata) {
-        fprintf(stderr, "Failed; Could not allocate memory for webdata");
+    printf("Getting from the URL: %s\n", url);
+    Memory *mem = malloc(sizeof(Memory));
+    if(!mem) {
+        fprintf(stderr, "Could not allocate memory for Memory structure. Failed!");
         return NULL;
     }
+    mem->response = NULL;
+    mem->size = 0;
+    //
     int still_running;
     CURLM *multi = curl_multi_init();
     if(!multi) {
         fprintf(stderr, "curl_multi_init failed");
-        free(webdata);
         return NULL;
     }
     CURL *op = curl_easy_init(); // an http operation
     if(!op) {
         fprintf(stderr, "curl_easy_init failed");
-        free(webdata);
         return NULL;
     }
     
     //Settings
-    curl_easy_setopt(op, CURLOPT_URL, website);
-    curl_easy_setopt(op, CURLOPT_WRITEDATA, &webdata);
+    curl_easy_setopt(op, CURLOPT_URL, url);
+    curl_easy_setopt(op, CURLOPT_WRITEDATA, (void *)mem);
     curl_easy_setopt(op, CURLOPT_WRITEFUNCTION, write_webdata);
     CURLMcode res = curl_multi_add_handle(multi, op);
     if(res != CURLM_OK) {
         fprintf(stderr, "curl_multi_add_handle failed; code: %d", res);
-        free(webdata);
         return NULL;
     }
     // Execute
@@ -85,9 +82,26 @@ char * fetch_website(const char *url) {
         }
     }
     while(still_running);
-
-    return webdata;
-    // free(webdata); needs to be done by caller after using it
+    
+    curl_multi_cleanup(multi);
+    curl_easy_cleanup(op);
+    return mem;
+    // Returned dynamic memory needs to be freed by caller 
 
 }
 
+/*   
+Separate function that checks for the url and prepares it to be fetched:: (extracted from fetch_website)
+ // Extracting URL
+
+    // Check if its just a simple URL or does it need parsing...
+    UriQueryListA *list = parse_query(url);
+    if(!list) {
+        printf("Provided url could not be parsed into a list @fetch_website\n");
+        return NULL;
+    }
+    const char *website = get_key_value(list, "get");
+    if(!website) {
+        fprintf(stderr, "Key could not be retrieved");
+        return NULL;
+    }*/

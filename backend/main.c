@@ -6,7 +6,7 @@
 
 int main() {
     // Loading configurations
-    #define PORT 80
+    #define PORT 8080
     curl_global_init(CURL_GLOBAL_DEFAULT); // Initilaizing curl.. called once per program lifetime
     curl_easy_init();
     curl_multi_init();
@@ -16,7 +16,7 @@ int main() {
     // ?
     // ?
 
-    // Starting the server 
+    // Starting the API 
     struct MHD_Daemon *daemon = start_http_server(
             MHD_USE_AUTO_INTERNAL_THREAD,
             PORT
@@ -28,12 +28,11 @@ int main() {
 
     printf("[microhttpdaemon] Listening on %d\n", PORT);
 
-    char * content = fetch_website("http://localhost/?get=icanhazip.com");
-    if(!content) {
-        fprintf(stderr, "fetch_website failed\n");
-    }
-
-    printf("%s\n", content);
+    // char * content = fetch_website("http://localhost/?get=localhost");
+    // if(!content) {
+    //     fprintf(stderr, "fetch_website failed\n");
+    // }
+    // printf("%s\n", content);
 
     getchar();
     
