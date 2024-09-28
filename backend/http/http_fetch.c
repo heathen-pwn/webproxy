@@ -4,6 +4,9 @@
 #include "http_parse.h"
 #include "curl.h"
 
+
+// Must add necessary headers to allow Redirect
+// Meaning there should be a mechanism whereby my HTTP_GET here can respond and delve further into a request and not just 1 GET 
 size_t write_webdata(char *response_content, size_t size /*size per chunk*/, size_t nmemb /*number of chunks in current transfer*/, void *webdata) {
     if(!webdata) {
         fprintf(stderr, "Webdata points to nothing");
@@ -61,10 +64,11 @@ Memory * fetch_website(const char *url) {
         return NULL;
     }
     
-    //Settings
+    // HTTP GET FROM BACKEND (this might usefully be put in a separate command later for header-specific considerations)
     curl_easy_setopt(op, CURLOPT_URL, url);
     curl_easy_setopt(op, CURLOPT_WRITEDATA, (void *)mem);
     curl_easy_setopt(op, CURLOPT_WRITEFUNCTION, write_webdata);
+    curl_easy_setopt(op, CURLOPT_FOLLOWLOCATION, 1L);
     CURLMcode res = curl_multi_add_handle(multi, op);
     if(res != CURLM_OK) {
         fprintf(stderr, "curl_multi_add_handle failed; code: %d", res);

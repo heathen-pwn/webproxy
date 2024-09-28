@@ -37,6 +37,7 @@ const char* get_key_value(UriQueryListA *querylist, char *key) {
     }
 
     while(current) {
+        printf("[get_key_value] current key %s", current->key);
         if(!strcmp(current->key, key)) {
             return current->value;
         }

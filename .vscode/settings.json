@@ -5,6 +5,8 @@
         "http_server.h": "c",
         "curl.h": "c",
         "stdlib.h": "c",
-        "http_parse.h": "c"
+        "http_parse.h": "c",
+        "http_fetch.h": "c",
+        "uuid.h": "c"
     }
 }

@@ -8,13 +8,6 @@ int main() {
     // Loading configurations
     #define PORT 8080
     curl_global_init(CURL_GLOBAL_DEFAULT); // Initilaizing curl.. called once per program lifetime
-    curl_easy_init();
-    curl_multi_init();
-
-    // Entry of application
-    // ?
-    // ?
-    // ?
 
     // Starting the API 
     struct MHD_Daemon *daemon = start_http_server(
@@ -28,15 +21,8 @@ int main() {
 
     printf("[microhttpdaemon] Listening on %d\n", PORT);
 
-    // char * content = fetch_website("http://localhost/?get=localhost");
-    // if(!content) {
-    //     fprintf(stderr, "fetch_website failed\n");
-    // }
-    // printf("%s\n", content);
-
     getchar();
     
-    // etc...
-
+    // Cleanup
     curl_global_cleanup();
 }
