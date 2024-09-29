@@ -7,6 +7,14 @@
         "stdlib.h": "c",
         "http_parse.h": "c",
         "http_fetch.h": "c",
-        "uuid.h": "c"
+        "uuid.h": "c",
+        "hash.h": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "xutility": "c",
+        "session.h": "c",
+        "main.h": "c",
+        "uniques.h": "c",
+        "http_cookies.h": "c"
     }
 }

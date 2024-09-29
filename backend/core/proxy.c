@@ -2,13 +2,26 @@
 #include "curl.h"
 #include "http_server.h"
 #include "http_parse.h"
+#include "session.h"
 
-// Current cookies
 
 // Headers of an HTTP request to the API
 enum MHD_Result process_headers(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
     printf("%s: %s; ", key, value);
+    return MHD_YES;
+    // MHD_YES keeps iterating
+}
+
+
+// Processing cookies as they come from each http request
+enum MHD_Result process_cookies(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+{
+    printf("[cookie] %s: %s; ", key, value);
+    RequestEssentials *request_essentials = (RequestEssentials *)cls;
+    if(!strcmp(key, "SessionID")) {
+        update_session_tick(get_session(request_essentials->context->sessionsTable, key));
+    }
     return MHD_YES;
     // MHD_YES keeps iterating
 }

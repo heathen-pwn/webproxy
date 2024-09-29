@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/backend",
                 "${workspaceFolder}/backend/include"  // Adjust this path if necessary
             ],
             "defines": [],

@@ -6,8 +6,12 @@ SRC= \
 	backend/http/http_server.c \
 	backend/http/http_fetch.c \
 	backend/http/http_parse.c \
-	backend/core/proxy.c 
-LIBS= -lmicrohttpd -lcurl -luriparser
+	backend/http/http_cookies.c \
+	backend/core/proxy.c \
+	backend/core/session.c \
+	backend/core/uniques.c \
+	backend/core/hash.c 
+LIBS= -lmicrohttpd -lcurl -luriparser -luuid
 all: $(TARGET)
 
 $(TARGET): 
