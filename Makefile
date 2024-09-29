@@ -7,6 +7,7 @@ SRC= \
 	backend/http/http_fetch.c \
 	backend/http/http_parse.c \
 	backend/http/http_cookies.c \
+	backend/http/http_session.c \
 	backend/core/proxy.c \
 	backend/core/session.c \
 	backend/core/uniques.c \

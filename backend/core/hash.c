@@ -12,7 +12,7 @@ static inline uint32_t murmur_32_scramble(uint32_t k) {
 
 uint32_t murmur3_32(const char* key, size_t len, uint32_t seed, uint32_t table_size) {
     // Check for NULL key and handle zero-length case
-    printf("Murmur3 hashing %s", key);
+    printf("Murmur3 hashing %s\n", key);
     if (!key || len == 0) {
         return seed; // Return the seed if the key is NULL or length is zero
     }

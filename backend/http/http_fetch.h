@@ -14,5 +14,7 @@ typedef struct {
 // struct MHD_Daemon* start_http_server(unsigned int flags, uint16_t port);
 size_t write_webdata(char *ptr, size_t size, size_t nmemb, void *web_data);
 Memory * fetch_website(const char *url);
+enum MHD_Result handle_get_request(void *cls, const char* url);
+enum MHD_Result handle_resource_redirection(void *cls, const char *url);
 
 #endif // HTTP_FETCH_H

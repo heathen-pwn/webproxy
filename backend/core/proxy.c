@@ -1,13 +1,43 @@
 #include <microhttpd.h>
 #include "curl.h"
+#include "http_fetch.h"
 #include "http_server.h"
 #include "http_parse.h"
 #include "session.h"
 
-
-// Headers of an HTTP request to the API
 enum MHD_Result process_headers(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
+    printf("%s: %s; ", key, value);
+    return MHD_YES;
+}
+
+
+// Headers of an HTTP request to the API with arguments (i.e: /proxy?q=icanhazip.com)
+enum MHD_Result process_args(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
+{
+    RequestEssentials *request_essentials = (RequestEssentials *)cls;
+    if(!key) {
+        return MHD_NO;
+    }
+    if(!strcmp(key, "q")) { // Proxy request to target website (value = URL)
+        if(!value) {
+            return MHD_NO;
+        }
+        Memory *buffer = fetch_website(value);
+        if (!buffer)
+        {
+            fprintf(stderr, "Failed to fetch website: %s\n", value);
+            return MHD_NO;
+        }
+        request_essentials->response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
+        if (!request_essentials->response)
+        {
+            fprintf(stderr, "MHD_create_response_from_buffer failed");
+            free(buffer);
+            return MHD_NO;
+        }
+        // Buffer needs to be freed in success as well!! by caller
+    }
     printf("%s: %s; ", key, value);
     return MHD_YES;
     // MHD_YES keeps iterating
@@ -17,19 +47,19 @@ enum MHD_Result process_headers(void *cls, enum MHD_ValueKind kind, const char *
 // Processing cookies as they come from each http request
 enum MHD_Result process_cookies(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-    printf("[cookie] %s: %s; ", key, value);
+    printf("[cookie] %s: %s;\n", key, value);
     RequestEssentials *request_essentials = (RequestEssentials *)cls;
     if(!strcmp(key, "SessionID")) {
-        update_session_tick(get_session(request_essentials->context->sessionsTable, key));
+        if(key) {
+            update_session_tick(get_session(request_essentials->context->sessionsTable, key));
+        }
     }
     return MHD_YES;
     // MHD_YES keeps iterating
 }
 
 /*
- * This function receives a connection and the url that is sent towards the proxy server
- * What it needs to do is to return the real URL where the resource comes from so the proxy server can fetch it
- * Caller needs to free full_url
+ * This function returns the FULL URL of an (online) resource
  */
 char *redirect_resources(struct MHD_Connection *connection, const char *resource_url)
 {

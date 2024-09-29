@@ -10,10 +10,12 @@
 #include "http_fetch.h"
 #include "proxy.h"
 #include "http_cookies.h"
+#include "http_session.h"
 
 typedef struct {
-    const App *context; 
-    struct MHD_Connection *connection;
+    const App *context;  // Read only
+    struct MHD_Connection *connection; 
+    struct MHD_Response *response; 
     
 } RequestEssentials;
 

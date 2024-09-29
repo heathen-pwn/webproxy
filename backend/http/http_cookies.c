@@ -18,4 +18,3 @@ void add_cookie(struct MHD_Response *response, Cookie *cookie)
         fprintf(stderr, "Could not add cookie to header; add_cookie failed");
     }
 }
-
