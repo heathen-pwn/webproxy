@@ -6,9 +6,9 @@
 // Add cookie to specified HTTP response
 void add_cookie(struct MHD_Response *response, Cookie *cookie)
 {
-    const size_t cookie_len = snprintf(NULL, 0, "%s=%s", cookie->key, cookie->value);
-    char *cookie_header = malloc(cookie_len + 1); // null terminator
-    snprintf(cookie_header, cookie_len + 1, "%s=%s", cookie->key, cookie->value);
+    const size_t cookie_len = snprintf(NULL, 0, "%s=%s", cookie->key, cookie->value) + 1; // null terminator
+    char *cookie_header = malloc(cookie_len); 
+    snprintf(cookie_header, cookie_len, "%s=%s", cookie->key, cookie->value);
     if (cookie_header)
     {
         MHD_add_response_header(response, "Set-Cookie", cookie_header);

@@ -25,9 +25,8 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection, con
     { // HTTP GET
         handle_get_request(&request_essentials, url);
     }
-
     // Session management
-    handle_session_management(&request_essentials);
+    manage_session(&request_essentials);
     // Queuing response...
 
     if (request_essentials.response)
@@ -57,4 +56,44 @@ struct MHD_Daemon *start_http_server(App *context, unsigned int flags, uint16_t 
     struct MHD_Daemon *daemon =
         MHD_start_daemon(flags, port, NULL, NULL, &handle_request, (void *)context, MHD_OPTION_END);
     return daemon;
+}
+
+enum MHD_Result handle_get_request(void *cls, const char *url)
+{
+    RequestEssentials *request_essentials = (RequestEssentials *)cls;
+
+    int itersize = MHD_get_connection_values(request_essentials->connection, MHD_HEADER_KIND, process_headers, request_essentials);
+    printf("\n");
+    //process_proxy:
+    int argcount = MHD_get_connection_values(request_essentials->connection, MHD_GET_ARGUMENT_KIND, process_args, request_essentials);
+    printf("\n");
+    int cookies_count = MHD_get_connection_values(request_essentials->connection, MHD_COOKIE_KIND, process_cookies, request_essentials);
+
+
+    printf("Request metadata: Number of Headers %d; Number of Cookies %d; Number of Arguments in URL %d\n", itersize, cookies_count, argcount);
+
+    // No response, meaning none of the previous functions had filled a response yet.. so let's look for more ways to generate a response:
+    if (!request_essentials->response)
+    {
+        handle_resource_redirection(request_essentials, url);
+    }
+    return MHD_YES;
+}
+
+enum MHD_Result handle_resource_redirection(void *cls, const char *url)
+{
+    RequestEssentials *request_essentials = (RequestEssentials *)cls;
+    const char *query = MHD_lookup_connection_value(request_essentials->connection, MHD_HEADER_KIND, "x-serve-local");
+    if (query /*REDIRECTING RESOURCES*/)
+    {
+        if (!strcmp(query, "1")) // serve the resources
+        {
+            query = redirect_resources(request_essentials, url);
+            printf("REDIRECTING RESOURCES FROM %s\n", query);
+            Memory *buffer = fetch_website(query);
+            request_essentials->response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
+            // Response is being freed but not buffer
+        }
+    }
+    return MHD_YES;
 }

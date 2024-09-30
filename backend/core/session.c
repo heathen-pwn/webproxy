@@ -11,14 +11,18 @@
 // Lookup session from session table
 Session *get_session(SessionTable *session_table, const char *session_id)
 {
-    unsigned long index = murmur3_32(session_id, strlen(session_id), 990, MAX_SESSIONS);
+
+    uint32_t index = murmur3_32(session_id, strlen(session_id), 0, MAX_SESSIONS);
     SessionNode *current = session_table->table[index];
 
     // Collision handling
+
     while (current != NULL)
     {
+        printf("Comparing node %s with given %s\n", current->session->session_id, session_id);
         if (strcmp(current->session->session_id, session_id) == 0)
         {
+            printf("Session %s found in the server\n", session_id);
             return current->session; // Session found
         }
         current = current->next; // Move to the next node
@@ -27,13 +31,13 @@ Session *get_session(SessionTable *session_table, const char *session_id)
     return NULL; // Session not found
 }
 
-// Create session, session needs to be added to the hashtable with insert_session
+// Create session, session needs to be added to the hashtable with register_session
 Session *create_session()
 {
     Session *session = malloc(sizeof(Session)); // must be freed by caller
     if (!session)
     {
-        fprintf(stderr, "create_session malloc failed");
+        fprintf(stderr, " malloc failed @create_session");
         return NULL;
     }
     session->session_id = generate_uuid();
@@ -42,28 +46,30 @@ Session *create_session()
 }
 
 // Function to insert a session into the hash table
-void insert_session(SessionTable *session_table, Session *session)
+void register_session(SessionTable *session_table, Session *session)
 {
     if (!session_table || !session)
     {
-        fprintf(stderr, "insert session failed\n");
+        fprintf(stderr, "register_session failed\n");
         return;
     }
-    unsigned long index = murmur3_32(session->session_id, strlen(session->session_id), 990, MAX_SESSIONS);
+    uint32_t index = murmur3_32(session->session_id, strlen(session->session_id), 0, MAX_SESSIONS);
+    
     if (index > MAX_SESSIONS)
     {
-        fprintf(stderr, "insert_session failed; index array out of bounds\n");
+        fprintf(stderr, "register_session failed; index array out of bounds\n");
         return;
     }
     SessionNode *new_node = malloc(sizeof(SessionNode)); // Caller must free
     if (!new_node)
     {
-        fprintf(stderr, "insert_session failed; could not allocate memory for new node\n");
+        fprintf(stderr, "register_session failed; could not allocate memory for new node\n");
         return;
     }
     new_node->session = session;
     new_node->next = session_table->table[index];
     session_table->table[index] = new_node; // Insert at the beginning of the linked list
+    printf("Session %s successfully registered @register_session\n", session_table->table[index]->session->session_id);
 }
 
 // Create a Sessions table

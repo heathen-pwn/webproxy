@@ -16,11 +16,14 @@ typedef struct {
     const App *context;  // Read only
     struct MHD_Connection *connection; 
     struct MHD_Response *response; 
+    const char* request_full_url;
     
 } RequestEssentials;
 
 // struct MHD_Daemon* start_http_server(unsigned int flags, uint16_t port);
 struct MHD_Daemon* start_http_server(App *context, unsigned int flags, uint16_t port);
 enum MHD_Result  handle_request(void *cls, struct MHD_Connection * connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls) ;
+enum MHD_Result handle_get_request(void *cls, const char* url);
+enum MHD_Result handle_resource_redirection(void *cls, const char *url);
 
 #endif // HTTP_SERVER_H

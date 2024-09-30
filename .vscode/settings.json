@@ -15,6 +15,7 @@
         "session.h": "c",
         "main.h": "c",
         "uniques.h": "c",
-        "http_cookies.h": "c"
+        "http_cookies.h": "c",
+        "tuple": "c"
     }
 }
