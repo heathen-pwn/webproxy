@@ -4,17 +4,23 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compile Code in Docker Container",
+            "label": "Clean",
             "type": "shell",
-            "command": "docker",
-            "args": [
-                "exec",
-                "-it",
-                "laughing_moser",
-                "/bin/bash",
-                "-c",
-                "make -s -C /shared/nginx-proxy -f Makefile clean;  make -s -C /shared/nginx-proxy -f Makefile"
-            ],
+            "command": "make -C /shared/nginx-proxy -f Makefile clean"
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "make -s -C /shared/nginx-proxy -f Makefile"
+        },
+        {
+            "label": "Debug",
+            "type": "shell",
+            "command": "cd /shared/nginx-proxy; ./webproxy"
+        },
+        {
+            "label": "Compile Code in Docker Container",
+            "dependsOn": ["Clean", "Build"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -24,12 +30,8 @@
         {
             "label": "Run Docker Web Proxy Program",
             "type": "shell",
-            "command": "docker",
+            "command": "sh",
             "args": [
-                "exec",
-                "laughing_moser",
-                "/bin/bash",
-                "-c",
                 "cd /shared/nginx-proxy && ./webproxy"
             ],
             "group": "test",

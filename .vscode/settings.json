@@ -16,6 +16,7 @@
         "main.h": "c",
         "uniques.h": "c",
         "http_cookies.h": "c",
-        "tuple": "c"
+        "tuple": "c",
+        "pthread.h": "c"
     }
 }

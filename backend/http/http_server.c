@@ -44,7 +44,10 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection, con
         return MHD_NO;
     }
     // Buffers are not being freed (redirect resources and process_args)
-    // Need to free the resource URL returned by redirect_resources... but if i Just free(query) here there's a chance its the PROXY.. so need to separate them; MEMORY LEAK RN!
+    if(request_essentials.buffer) {
+        free(request_essentials.buffer);
+        request_essentials.buffer = NULL;
+    } 
     printf("-----------------[HTTP: REQUEST END]-----------------");
     printf("\n\n\n\n");
     return MHD_YES;
@@ -88,11 +91,16 @@ enum MHD_Result handle_resource_redirection(void *cls, const char *url)
     {
         if (!strcmp(query, "1")) // serve the resources
         {
-            query = redirect_resources(request_essentials, url);
+            char *full_url = redirect_resources(request_essentials, url);
             printf("REDIRECTING RESOURCES FROM %s\n", query);
-            Memory *buffer = fetch_website(query);
+            
+            Memory *buffer = fetch_website(full_url);
+
+            request_essentials->buffer = buffer;
             request_essentials->response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
-            // Response is being freed but not buffer
+
+            free(full_url);
+            //  Memory *buffer is freed when queuing HTTP request
         }
     }
     return MHD_YES;

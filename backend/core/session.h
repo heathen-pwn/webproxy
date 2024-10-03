@@ -1,17 +1,19 @@
 #ifndef SESSION_H
 #define SESSION_H
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
-// TBD: dynamic resizing 
-#define MAX_SESSIONS 32
+// Protecting session race condition
+extern pthread_mutex_t session_mutex;
 
 typedef struct
 {
     char *session_id;
     char *session_key;
     time_t update;
-    const char *session_url; // must be freed (malloc)
+    char *session_url; 
 } Session;
 
 typedef struct SessionNode
@@ -23,18 +25,21 @@ typedef struct SessionNode
 typedef struct
 {
     SessionNode **table; // Table array that contains the nodes
+    int table_size;
+    int node_count;
 } SessionTable; // The hash table itself
 
-SessionTable *create_sessions_table();
+SessionTable *create_sessions_table(int table_size);
 Session *get_session(SessionTable *session_table, const char *session_id);
-Session *create_session();
+Session *create_session(void *cls);
 void register_session(SessionTable *session_table, Session *session);
 
-void free_session(Session *session);
+void free_session(void *cls, Session *session);
 void free_sessions_table(SessionTable *session_table);
 void free_session_node(SessionNode *node);
 
 void update_session_tick(Session *ses);
+void *collect_session_garbage(void *arg);
 
 
 #endif /* SESSION_H */

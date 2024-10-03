@@ -17,6 +17,7 @@ typedef struct {
     struct MHD_Connection *connection; 
     struct MHD_Response *response; 
     const char* request_full_url;
+    Memory *buffer;
     
 } RequestEssentials;
 

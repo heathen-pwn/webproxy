@@ -20,7 +20,7 @@ Session *setup_http_session(void *cls) {
     if(!is_valid_session(request_essentials, client_session))
     {
         // Creating session
-        ses = create_session(); // MUST BE FREED when session ends
+        ses = create_session((void *)request_essentials); // MUST BE FREED when session ends
         if (!ses) {
             fprintf(stderr, "create_session failed  (@setup_http_session)\n");
         }

@@ -8,7 +8,7 @@
 
 enum MHD_Result process_headers(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-    // printf("%s: %s; ", key, value);
+    printf("%s: %s; ", key, value);
     return MHD_YES;
 }
 
@@ -28,6 +28,7 @@ enum MHD_Result process_args(void *cls, enum MHD_ValueKind kind, const char *key
         }
         Memory *buffer = fetch_website(value);
         request_essentials->request_full_url = value;
+        request_essentials->buffer = buffer;
         if (!buffer)
         {
             fprintf(stderr, "Failed to fetch website: %s\n", value);
@@ -69,7 +70,10 @@ enum MHD_Result process_cookies(void *cls, enum MHD_ValueKind kind, const char *
 char *redirect_resources(void *cls, const char *resource_url)
 {
     RequestEssentials *request_essentials = (RequestEssentials *)cls;
-    // Session-based resource redirection
+    /*
+    *    Session-based resource redirection:
+    */
+
     if(!request_essentials->context->sessionsTable) {
         printf("There is no table.. @redirect_resources\n");
         return NULL;
@@ -104,7 +108,9 @@ char *redirect_resources(void *cls, const char *resource_url)
 
     }
 
-    // Stateless Resource Redirection
+    /*
+    *   Stateless Resource Redirection
+    */ 
     const char *target = MHD_lookup_connection_value(request_essentials->connection, MHD_HEADER_KIND, "Referer");
     UriQueryListA *keyvalue = parse_query(target);
     target = get_key_value(keyvalue, "q");
