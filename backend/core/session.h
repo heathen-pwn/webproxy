@@ -39,7 +39,9 @@ void free_sessions_table(SessionTable *session_table);
 void free_session_node(SessionNode *node);
 
 void update_session_tick(Session *ses);
-void *collect_session_garbage(void *arg);
+void collect_session_garbage(void *arg);
 
+void resize_sessions_table(SessionTable *session_table, int new_table_size, void *cls);
+void scale_sessions_table(void *cls);
 
 #endif /* SESSION_H */

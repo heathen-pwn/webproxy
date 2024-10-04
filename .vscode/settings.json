@@ -17,6 +17,8 @@
         "uniques.h": "c",
         "http_cookies.h": "c",
         "tuple": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "json.h": "c",
+        "thread_pool.h": "c"
     }
 }

@@ -8,18 +8,28 @@
 #include <pthread.h>
 #include <json-c/json.h>
 #include "session.h"
+#include "thread_pool.h"
 
 extern pthread_cond_t cond_collect_garbage;
 
 typedef struct {
+    int port;
     SessionTable *sessionsTable;
-    int sessions_threshold;
+    float sessions_threshold;
     int sessions_timeout;
+    int default_table_size;
+    thread_pool_t *thread_pool;
 } App;
+
+enum APP_RESULT {
+    APP_NO = 0,
+    APP_YES = 1
+};
 
 #include "http_server.h"
 
 // Function declarations go here
 
+enum APP_RESULT load_config(App *context);
 
 #endif /* MAIN_H */

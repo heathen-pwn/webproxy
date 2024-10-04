@@ -7,6 +7,11 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection, con
     printf("-----------------[HTTP: %s]-----------------\n", method);
     const App *context = (App *)cls;
 
+    if(!context) {
+        fprintf(stderr, "There is no application context");
+        return MHD_NO;
+    }
+
     RequestEssentials request_essentials = {0};
     request_essentials.context = context;
     request_essentials.connection = connection;
@@ -43,7 +48,8 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection, con
         fprintf(stderr, "No response.. ending request\n");
         return MHD_NO;
     }
-    // Buffers are not being freed (redirect resources and process_args)
+
+    // Freeing full url buffer
     if(request_essentials.buffer) {
         free(request_essentials.buffer);
         request_essentials.buffer = NULL;

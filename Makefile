@@ -11,8 +11,9 @@ SRC= \
 	backend/core/proxy.c \
 	backend/core/session.c \
 	backend/core/uniques.c \
-	backend/core/hash.c 
-LIBS= -lmicrohttpd -lcurl -luriparser -luuid
+	backend/core/hash.c \
+	backend/core/thread_pool.c 
+LIBS= -lmicrohttpd -lcurl -luriparser -luuid -ljson-c
 all: $(TARGET)
 
 $(TARGET): 

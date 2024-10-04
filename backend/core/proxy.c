@@ -8,7 +8,7 @@
 
 enum MHD_Result process_headers(void *cls, enum MHD_ValueKind kind, const char *key, const char *value)
 {
-    printf("%s: %s; ", key, value);
+    // printf("%s: %s; ", key, value);
     return MHD_YES;
 }
 
