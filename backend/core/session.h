@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-
 // Protecting session race condition
 extern pthread_mutex_t session_mutex;
 
@@ -41,7 +40,9 @@ void free_session_node(SessionNode *node);
 void update_session_tick(Session *ses);
 void collect_session_garbage(void *arg);
 
-void resize_sessions_table(SessionTable *session_table, int new_table_size, void *cls);
+void resize_sessions_table(void *cls, int new_table_size);
 void scale_sessions_table(void *cls);
+
+
 
 #endif /* SESSION_H */

@@ -3,8 +3,8 @@
 #include <pthread.h>
 #include "hash.h"
 #include "uniques.h"
-#include "session.h"
 #include "../main.h"
+#include "session.h"
 // A session will expire after timeout, meant to stay for the period of the connection
 // When using keep-alive, we can get the signal when the user closes the connection so we free the session memory
 // Otherwise cleanup sessions after timeout (garbage collection)
@@ -43,7 +43,7 @@ Session *create_session(void *cls)
         return NULL;
     }
     pthread_mutex_lock(&session_mutex);
-    
+
     session->session_id = generate_uuid();
     session->session_key = generate_uuid();
 
@@ -56,51 +56,56 @@ Session *create_session(void *cls)
     printf("Threshold %.2f\n", request_essentials->context->sessions_threshold);
 
     // Scaling
-    thread_pool_add(request_essentials->context->thread_pool, scale_sessions_table, (void *)request_essentials);
+    thread_pool_add(request_essentials->context->thread_pool, scale_sessions_table, (void *)request_essentials->context);
 
     return session;
 }
-void scale_sessions_table(void *cls) {
-    RequestEssentials *request_essentials = (RequestEssentials *)cls;
-    SessionTable *sessions_table = NULL;
-    if(!request_essentials->context) {
-        fprintf(stderr, "NO CONTEXT!!!\n");
-        return;
-    }
-    if(!request_essentials->context->sessionsTable) {
-        fprintf(stderr, "NO TABLE IN REQUEST_ESSENTIALS_CONTEXT\n");
-        return;
-    }
-    // Scale up
-    pthread_mutex_lock(&session_mutex);
-
-    if(request_essentials->context->sessionsTable->node_count > request_essentials->context->sessionsTable->table_size*(request_essentials->context->sessions_threshold)) {
-        resize_sessions_table(request_essentials->context->sessionsTable, (request_essentials->context->sessionsTable->table_size)*2, (void *)request_essentials);
-        thread_pool_add(request_essentials->context->thread_pool, collect_session_garbage, (void *)request_essentials->context);
-    } else if (request_essentials->context->sessionsTable->table_size != request_essentials->context->default_table_size) {
-        if(request_essentials->context->sessionsTable->node_count < (request_essentials->context->sessionsTable->table_size)/2) { // Scale down
-            resize_sessions_table(request_essentials->context->sessionsTable, (request_essentials->context->sessionsTable->table_size)/2, (void *)request_essentials);
+void scale_sessions_table(void *cls)
+{ // Segmentation fault
+    App *context = (App *)cls;
+    if (context)
+    {
+        pthread_mutex_lock(&session_mutex);
+        // sessions_threshold
+        if (context->sessionsTable->node_count > context->sessionsTable->table_size * (context->sessions_threshold))
+        {// Scale up   
+            resize_sessions_table(context, (context->sessionsTable->table_size) * 2);
+            thread_pool_add(context->thread_pool, collect_session_garbage, (void *)context);
         }
+        else if (context->sessionsTable->table_size != context->default_table_size)
+        {// Scale down
+            if (context->sessionsTable->node_count < (context->sessionsTable->table_size) / 2)
+            { 
+                resize_sessions_table(context, (context->sessionsTable->table_size) / 2);
+            }
+        }
+        pthread_mutex_unlock(&session_mutex);
+        return;
     }
-
-    pthread_mutex_unlock(&session_mutex);
+    else
+    {
+        fprintf(stderr, "Invalid context passed to scale_sessions_table");
+        return; // no scaling done
+    }
 }
-void resize_sessions_table(SessionTable *session_table, int new_table_size, void *cls) {
-    RequestEssentials *request_essentials = (RequestEssentials *)cls;
+void resize_sessions_table(void *cls, int new_table_size)
+{
+    App *context = (App *)cls;
     // Create new scaled table
     SessionNode **scaled_session_table = calloc(new_table_size, sizeof(SessionNode *));
-    if(!scaled_session_table) {
+    if (!scaled_session_table)
+    {
         fprintf(stderr, "Error allocating scaled table!");
         return;
     }
     // Rehash existing entries to the new table
-    for (size_t i = 0; i < request_essentials->context->sessionsTable->table_size; ++i) {
-        SessionNode *node = request_essentials->context->sessionsTable->table[i];
-        while (node) {
-            // Calculate new index based on new_table_size
+    for (size_t i = 0; i < context->sessionsTable->table_size; ++i)
+    {
+        SessionNode *node = context->sessionsTable->table[i];
+        while (node)
+        {
+            // Calculate hashes for new_table_size
             size_t new_index = murmur3_32(node->session->session_id, strlen(node->session->session_id), 0, new_table_size);
-            //murmur3_32(session->session_id, strlen(session->session_id), 0, session_table->table_size);
-            // Move node to the new table
             SessionNode *next_node = node->next;
             node->next = scaled_session_table[new_index];
             scaled_session_table[new_index] = node;
@@ -108,11 +113,13 @@ void resize_sessions_table(SessionTable *session_table, int new_table_size, void
         }
     }
     // Free the old table and update table reference and size
-    free(request_essentials->context->sessionsTable->table);
-    request_essentials->context->sessionsTable->table = scaled_session_table;
-    request_essentials->context->sessionsTable->table_size = new_table_size;
+    free(context->sessionsTable->table);
+    context->sessionsTable->table = scaled_session_table;
+    context->sessionsTable->table_size = new_table_size;
 
     printf("Scaled sessions table to size %d\n", new_table_size);
+
+    // return new_table_size;
 }
 // Function to insert a session into the hash table
 void register_session(SessionTable *session_table, Session *session)
@@ -145,9 +152,8 @@ void register_session(SessionTable *session_table, Session *session)
 
     pthread_mutex_unlock(&session_mutex);
 
-    printf("Session %s successfully registered at index %d @register_session\n", session_table->table[index]->session->session_id, index);
+    printf("Registered [session %s] @ [index %d] @register_session\n", session_table->table[index]->session->session_id, index);
 }
-
 
 // Create a Sessions table
 SessionTable *create_sessions_table(int table_size)
@@ -221,7 +227,7 @@ void free_session_node(SessionNode *node)
 {
     if (node)
     {
-        free(node);            // Free the node itself
+        free(node); // Free the node itself
     }
 }
 
@@ -236,7 +242,6 @@ void update_session_tick(Session *ses)
 }
 // Close session (connection: close)
 
-
 // Removing stale sessions
 void collect_session_garbage(void *arg)
 {
@@ -245,7 +250,7 @@ void collect_session_garbage(void *arg)
     pthread_mutex_lock(&session_mutex);
     // pthread_cond_wait(&cond_collect_garbage, &session_mutex);
     printf("collect_session_garbage @ signaled!\n");
-    
+
     for (int i = 0; i < context->sessionsTable->table_size; i++)
     {
         SessionNode *current = context->sessionsTable->table[i];
@@ -255,39 +260,44 @@ void collect_session_garbage(void *arg)
 
         while (current != NULL)
         {
-            if(current->session == NULL) {
+            if (current->session == NULL)
+            {
                 printf("current->session is NULL\n\n");
                 break;
             }
-            if(!current->session->update) {
+            if (!current->session->update)
+            {
                 printf("update is empty->");
                 break;
             }
             printf("Time: %ld", current->session->update);
             printf("Time check: %d", current->session->update < time(NULL) - context->sessions_timeout);
-            if (current->session->update < time(NULL) - 10)//context->sessions_timeout)
+            if (current->session->update < time(NULL) - 10) // context->sessions_timeout)
             {
                 printf("passed time check->");
                 // Freed session causing crash?.. check who is accessing it? (after adding cookie to response?)
                 SessionNode *next_node = current->next;
                 free_session(context, current->session);
-                
+
                 // Remove current node from the list
-                if(previous == NULL) 
+                if (previous == NULL)
                 {
-                    context->sessionsTable->table[i] = current->next; 
+                    context->sessionsTable->table[i] = current->next;
                     free_session_node(current);
                     printf("free node->");
                     // Crashing after this
-                
-                } else { // bypass deleted item
+                }
+                else
+                { // bypass deleted item
                     previous->next = current->next;
                     printf("bypass deleted item->");
                 }
                 current = next_node;
                 printf("session at index %d expired", i);
                 // printf("[collect_session_garbage] Session ID %s has expired! Index: %d", current->session->session_id, i);
-            } else {
+            }
+            else
+            {
                 previous = current;
                 current = current->next; // Move to the next node
                 printf("didnt pass time check, moving on to next node->");
