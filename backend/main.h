@@ -18,6 +18,7 @@ typedef struct {
     float sessions_threshold;
     int sessions_timeout;
     int default_table_size;
+    float minimum_threshold;
     thread_pool_t *thread_pool;
 } App;
 

@@ -55,13 +55,12 @@ Session *create_session(void *cls)
     printf("Table_Size %d|", request_essentials->context->sessionsTable->table_size);
     printf("Threshold %.2f\n", request_essentials->context->sessions_threshold);
 
-    // Scaling
+    // Scaling; this gets called everytime a new session is made, a lot of overhead can be generated out of this and unnecessary use of worker threads
     thread_pool_add(request_essentials->context->thread_pool, scale_sessions_table, (void *)request_essentials->context);
-
     return session;
 }
 void scale_sessions_table(void *cls)
-{ // Segmentation fault
+{
     App *context = (App *)cls;
     if (context)
     {
@@ -69,12 +68,13 @@ void scale_sessions_table(void *cls)
         // sessions_threshold
         if (context->sessionsTable->node_count > context->sessionsTable->table_size * (context->sessions_threshold))
         {// Scale up   
-            resize_sessions_table(context, (context->sessionsTable->table_size) * 2);
+            resize_sessions_table(context, (context->sessionsTable->table_size) * 2); 
             thread_pool_add(context->thread_pool, collect_session_garbage, (void *)context);
         }
         else if (context->sessionsTable->table_size != context->default_table_size)
         {// Scale down
-            if (context->sessionsTable->node_count < (context->sessionsTable->table_size) / 2)
+            printf("Threshold calc: %.2f", (context->minimum_threshold)*(context->sessionsTable->table_size));
+            if (context->sessionsTable->node_count < (context->minimum_threshold)*(context->sessionsTable->table_size))
             { 
                 resize_sessions_table(context, (context->sessionsTable->table_size) / 2);
             }

@@ -110,10 +110,10 @@ enum APP_RESULT load_config(App *context) {
         
         // Loading general program configurations
         if(json_object_object_get_ex(parsed_json, "app", &app_obj)) {
-            struct json_object *max_sessions_obj;
+            struct json_object *default_sessions_obj;
             printf("JSON: Got 'app' object");
-            if(json_object_object_get_ex(app_obj, "default_table_size", &max_sessions_obj)) {
-                context->default_table_size = json_object_get_int(max_sessions_obj);
+            if(json_object_object_get_ex(app_obj, "default_table_size", &default_sessions_obj)) {
+                context->default_table_size = json_object_get_int(default_sessions_obj);
             }
         }
         struct json_object *proxy_obj;
@@ -123,7 +123,8 @@ enum APP_RESULT load_config(App *context) {
             struct json_object *port_obj;
             struct json_object *sessions_threshold_obj;
             struct json_object *sessions_timeout_obj;
-            // struct json_object *max_sessions_obj;
+            struct json_object *minimum_threshold_obj;
+            // struct json_object *default_sessions_obj;
             printf("JSON: Got 'proxy' Object \n");
             if (json_object_object_get_ex(proxy_obj, "port", &port_obj)) {
                 context->port = json_object_get_int(port_obj);
@@ -140,12 +141,10 @@ enum APP_RESULT load_config(App *context) {
                 printf("Loaded sessions timeout: %d\n", context->sessions_timeout);
             }
             
-            // Pro-tip: can make create_sessions_table here as a json setting (context->sessionsTable = create_sessions_table(context->sessionsTable->table_size))    
-            // if (json_object_object_get_ex(proxy_obj, "max_sessions", &max_sessions_obj)) {
-            //     context->sessionsTable->table_size = json_object_get_int(max_sessions_obj);
-            //     printf("Loaded table size: %d\n", context->sessionsTable->table_size);
-            // }
-            
+            if (json_object_object_get_ex(proxy_obj, "minimum_threshold", &minimum_threshold_obj)) {
+                context->minimum_threshold = json_object_get_double(minimum_threshold_obj);
+                printf("Loaded sessions minimum: %.2f\n", context->minimum_threshold);
+            }
         
         } else {
             printf("Proxy configuration object not found!\n");
@@ -160,6 +159,8 @@ enum APP_RESULT load_config(App *context) {
             context->sessions_threshold = 0.75;
         if(!context->sessions_timeout) 
             context->sessions_timeout = 15;  // in minutes
+        if(!context->minimum_threshold) 
+            context->minimum_threshold = 0.5;  // in minutes
         if(context->sessionsTable) {
             if(!context->sessionsTable->table_size) 
                 context->sessionsTable->table_size = 32;
