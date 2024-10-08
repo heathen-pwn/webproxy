@@ -19,6 +19,8 @@
         "tuple": "c",
         "pthread.h": "c",
         "json.h": "c",
-        "thread_pool.h": "c"
+        "thread_pool.h": "c",
+        "string.h": "c",
+        "proxy.h": "c"
     }
 }

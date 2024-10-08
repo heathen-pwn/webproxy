@@ -76,6 +76,7 @@ Memory *fetch_website(const char *url)
     curl_easy_setopt(op, CURLOPT_WRITEDATA, (void *)mem);
     curl_easy_setopt(op, CURLOPT_WRITEFUNCTION, write_webdata);
     curl_easy_setopt(op, CURLOPT_FOLLOWLOCATION, 1L);
+    //curl_easy_setopt(op, CURLOPT_VERBOSE, 1L);
     CURLMcode res = curl_multi_add_handle(multi, op);
     if (res != CURLM_OK)
     {

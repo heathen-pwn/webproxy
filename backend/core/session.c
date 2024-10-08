@@ -272,7 +272,7 @@ void collect_session_garbage(void *arg)
             }
             printf("Time: %ld", current->session->update);
             printf("Time check: %d", current->session->update < time(NULL) - context->sessions_timeout);
-            if (current->session->update < time(NULL) - 10) // context->sessions_timeout)
+            if (current->session->update < time(NULL) - context->sessions_timeout)
             {
                 printf("passed time check->");
                 // Freed session causing crash?.. check who is accessing it? (after adding cookie to response?)

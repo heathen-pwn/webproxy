@@ -1,7 +1,6 @@
 #include "http_server.h"
 
 // Handling HTTP requests
-// There are many memory leaks here from the buffers inside the functions
 enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection, const char *url, const char *method, const char *version, const char *upload_data, size_t *upload_data_size, void **con_cls)
 {
     printf("-----------------[HTTP: %s]-----------------\n", method);
@@ -98,13 +97,21 @@ enum MHD_Result handle_resource_redirection(void *cls, const char *url)
         if (!strcmp(query, "1")) // serve the resources
         {
             char *full_url = redirect_resources(request_essentials, url);
-            printf("REDIRECTING RESOURCES FROM %s\n", query);
+            if(!full_url) {
+                fprintf(stderr, "redirect_resources failed @handle_resource_redirection");
+                return MHD_NO;
+            }
+            printf("REDIRECTING RESOURCES FROM %s\n", full_url);
             
             Memory *buffer = fetch_website(full_url);
-
-            request_essentials->buffer = buffer;
-            request_essentials->response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
-
+            
+            if(buffer) {
+                request_essentials->buffer = buffer;
+                request_essentials->response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
+            } else {
+                 request_essentials->buffer = NULL;
+                 request_essentials->response = NULL;
+            }
             free(full_url);
             //  Memory *buffer is freed when queuing HTTP request
         }
