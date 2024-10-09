@@ -36,7 +36,9 @@ Session *get_session(SessionTable *session_table, const char *session_id)
 Session *create_session(void *cls)
 {
     RequestEssentials *request_essentials = (RequestEssentials *)cls;
-    Session *session = malloc(sizeof(Session)); // must be freed by caller
+    Session *session = malloc(sizeof(Session)); // must be freed on disconnection (or GC)
+    memset(session, 0, sizeof(Session));
+
     if (!session)
     {
         fprintf(stderr, " malloc failed @create_session");

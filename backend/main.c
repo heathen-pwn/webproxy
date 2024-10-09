@@ -13,11 +13,13 @@ pthread_cond_t cond_collect_garbage;
 
 int main() {
     // Entry
-    App *context = malloc(sizeof(App));
+    App *context = malloc(sizeof(App)); // initialize app context
     if(!context) {
         fprintf(stderr, "Could not allocate memory for application context! Exiting..");
         return -1; 
     }  
+    memset(context, 0, sizeof(App)); 
+    // Create worker wasps
     thread_pool_t *thread_pool = thread_pool_init(2); // Garbage collection & scaling
     if(thread_pool) {
         context->thread_pool = thread_pool;
@@ -25,21 +27,19 @@ int main() {
         fprintf(stderr, "Thread pool could not be allocated");
         return -1;
     }
-    // Setting up configurations
+    // Configure app
     load_config(context);
 
     curl_global_init(CURL_GLOBAL_DEFAULT); // Initilaizing curl.. called once per program lifetime
     pthread_mutex_init(&session_mutex, NULL);
     pthread_cond_init(&cond_collect_garbage, NULL);
 
-    // Set up sessions table (can be integrated in load_config as part of the configuration file later)
     context->sessionsTable = create_sessions_table(context->default_table_size);
     if(!context->sessionsTable) {
         fprintf(stderr, "Could not create sessions table! Failed");
         return -1;
     }
-    // Starting the API 
-    // Daemon creates a separate thread
+    // Start the Proxy API
     struct MHD_Daemon *daemon = start_http_server(
             context,
             MHD_USE_AUTO_INTERNAL_THREAD,
@@ -51,13 +51,6 @@ int main() {
     }
 
     printf("[microhttpdaemon] Listening on %d\n", context->port);
-
-    // Threading
-    // pthread_t garbage_collector; 
-    // int res = pthread_create(&garbage_collector, NULL, &collect_session_garbage, (void *)context);
-    // if(res != 0) {
-    //     fprintf(stderr, "Could not create garbage collector thread!");
-    // }
 
     getchar();
     

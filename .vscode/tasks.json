@@ -19,8 +19,18 @@
             "command": "cd /shared/nginx-proxy; ./webproxy"
         },
         {
+            "label": "Copy Static Files to Nginx",
+            "type": "shell",
+            "command": "cp -r /shared/nginx-proxy/frontend/* /var/www/html/",
+            "problemMatcher": []
+        },
+        {
             "label": "Compile Code in Docker Container",
-            "dependsOn": ["Clean", "Build"],
+            "dependsOn": [
+                "Clean",
+                "Build",
+                "Copy Static Files to Nginx"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
