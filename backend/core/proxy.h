@@ -22,4 +22,5 @@ void sanitize_response(void *cls);
 char *inject_data(const char *injection, const size_t injection_size, char *buffer, size_t *buffer_size, char *injection_pos);
 char *erase_data(char *buffer, size_t *buffer_size, char *start_pos, char *end_pos);
 StringExtract *find_directive(const char *haystack, const char *directive, const char *symbol, const char *end_symbol);
+StringExtract *find_domain(const char *url);
 #endif // CORE_PROXY_H

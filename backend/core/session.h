@@ -13,6 +13,7 @@ typedef struct
     char *session_key;
     time_t update;
     char *session_url; 
+    size_t session_url_size;
 } Session;
 
 typedef struct SessionNode

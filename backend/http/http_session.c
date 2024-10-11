@@ -5,12 +5,13 @@ void manage_session(void *cls) {
     RequestEssentials *request_essentials = (RequestEssentials *)cls;
     const char *client_session = MHD_lookup_connection_value(request_essentials->connection, MHD_COOKIE_KIND, "SessionID");
     // There is no session in the HTTP request, so set one up
-    if (!is_valid_session(request_essentials, client_session))
+    Session *ses = is_valid_session(request_essentials, client_session);
+    if (!ses)
     {
         // Session must be freed from its hash table when session ends (not in this function)
         printf("Invalid session received from client: %s (@manage_session)\n", client_session);
-        setup_http_session(request_essentials);
-    }
+        setup_http_session(request_essentials);    
+    } 
     return;
 }
 Session *setup_http_session(void *cls) {
@@ -50,17 +51,17 @@ Session *setup_http_session(void *cls) {
     }
     return ses;
 }
-enum SESSION_RESULT is_valid_session(void *cls, const char *client_session) {
+Session *is_valid_session(void *cls, const char *client_session) {
     RequestEssentials *request_essentials = (RequestEssentials *)cls;
     
     if (!client_session) {
-        return SESSION_NO;  // No session cookie sent by the client
+        return NULL;  // No session cookie sent by the client
     }
 
     Session *ses = get_session(request_essentials->context->sessionsTable, client_session);
     
     if (!ses) { // Session not found or invalid
-        return SESSION_NO;
+        return NULL;
     }
-    return SESSION_YES;
+    return ses;
 }

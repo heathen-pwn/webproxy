@@ -31,14 +31,36 @@ enum MHD_Result process_args(void *cls, enum MHD_ValueKind kind, const char *key
         }
         Memory *buffer = fetch_website(value);
         request_essentials->request_full_url = value;
-        request_essentials->buffer = buffer;
         if (!buffer)
         {
             fprintf(stderr, "Failed to fetch website: %s\n", value);
             return MHD_NO;
         }
+        request_essentials->buffer = buffer;
+        
+        // Register redirection if session exists
+        const char *client_session = MHD_lookup_connection_value(request_essentials->connection, MHD_COOKIE_KIND, "SessionID");
+        Session *ses = is_valid_session(request_essentials, client_session);
+        if(ses) {
+            // Extract authoritative domain
+            StringExtract *extracted_url = find_domain(value);
+            //
+            size_t url_len = extracted_url->size + 1; // null terminator
+            char *session_url = malloc(url_len);
+            if(session_url) {
+                if(ses->session_url != NULL) { // If there is an existing session URL, free it first
+                    free(ses->session_url);
+                }
 
-        // Serve JS to protect client from IP leaks; this is causing fetch_webstie to crash when fetching proxy.js (altho request_essentials suppsoed to deinitialize per request)
+                // --
+                memcpy(session_url, extracted_url->start, extracted_url->size); 
+                // Parse the URL to be just the domainname.com
+                ses->session_url = session_url;
+                ses->session_url_size = extracted_url->size;
+                printf("Changed session URL to %s\n", session_url);
+            }
+            
+        }
         allocate_process(request_essentials);
 
         request_essentials->response = MHD_create_response_from_buffer(buffer->size, buffer->response, MHD_RESPMEM_MUST_FREE);
@@ -316,7 +338,34 @@ void sanitize_response(void *cls)
 
  
 }
-
+// https://canonical.com/blog/canonical-offers-12-year-lts-for-any-open-source-docker-imageQ/static/js/dist/main.js.map
+StringExtract *find_domain(const char *url) {
+    // Look for a dash (i.e., http:// or https://)
+    char *begin = strstr(url, "://");
+    char *end = NULL;
+    if(!begin) { // no protocol mentioned
+        // Maybe its a www.canonical.com
+        begin = strstr(url, "www."); 
+        if(!begin) { // There is no protocol and no www. so assume first byte is the authoritative domain
+            begin = (char *)url; // warning: assignment discards 'const' qualifier from pointer target type
+        }
+    } else {
+        begin += 3; // skip the ://
+    }
+    end = strchr(begin, '/'); // look for the first slash, i.e., canonical.com/ 
+    if(!end) { // no slash, the end is the end.
+        end = begin + strlen(url);
+    }
+    if(begin < end) {  // Make sure the content we have makes sense
+        StringExtract *directive_info = malloc(sizeof(StringExtract));  // must be freed
+        memset(directive_info, 0, sizeof(StringExtract));
+        directive_info->start = begin;
+        directive_info->end = end;
+        directive_info->size = end - begin;
+        return directive_info;
+    }
+    return NULL;
+}
 // Separate buffer/string logic in another core file
 StringExtract *find_directive(const char *haystack, const char *directive, const char *symbol, const char *end_symbol)
 { // Returns structure for beginning and end

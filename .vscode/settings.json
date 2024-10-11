@@ -21,6 +21,7 @@
         "json.h": "c",
         "thread_pool.h": "c",
         "string.h": "c",
-        "proxy.h": "c"
+        "proxy.h": "c",
+        "http_session.h": "c"
     }
 }

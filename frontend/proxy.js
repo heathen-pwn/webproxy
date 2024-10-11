@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (currentDomain !== linkDomain) {
             link.href = "/proxy?q=" + link.href;
-            console.log(link.href);
+            //console.log(link.href);
         }
     });
 });
