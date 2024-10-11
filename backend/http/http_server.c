@@ -29,6 +29,7 @@ enum MHD_Result handle_request(void *cls, struct MHD_Connection *connection, con
     }
     // Session management
     manage_session(&request_essentials);
+
     // Queuing response...
 
     if (request_essentials.response)
